@@ -4,7 +4,7 @@ Interactive tutorials on orbital mechanics, estimation theory, and navigation al
 
 ## Live Site
 
-> `https://your-username.github.io/spacecraft-nav`
+> `https://wnfife.github.io/spacecraft-nav-test/`
 
 ---
 
