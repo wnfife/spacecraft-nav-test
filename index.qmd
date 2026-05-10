@@ -1,0 +1,51 @@
+---
+title: ""
+page-layout: full
+toc: false
+---
+
+```{=html}
+<div class="hero">
+  <div class="badge-mono">🛰 ASTRODYNAMICS &amp; ESTIMATION</div>
+  <h1>Spacecraft Navigation</h1>
+  <p>Interactive tutorials on orbital mechanics, estimation theory, and navigation algorithms — with live visualizations and derivations.</p>
+</div>
+
+<div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap:1.2rem; margin-bottom:2rem;">
+
+  <a class="topic-card" href="least-squares.html">
+    <div class="icon">📐</div>
+    <h3>Least Squares</h3>
+    <p>Fitting models to noisy measurements. The foundation of every navigation filter.</p>
+  </a>
+
+  <div class="topic-card" style="opacity:0.5; cursor:not-allowed;">
+    <div class="icon">🔭</div>
+    <h3>Kalman Filter <span style="font-size:0.7rem; color:#aaa;">(coming soon)</span></h3>
+    <p>Recursive optimal estimation for dynamic systems.</p>
+  </div>
+
+  <div class="topic-card" style="opacity:0.5; cursor:not-allowed;">
+    <div class="icon">🌍</div>
+    <h3>Lambert's Problem <span style="font-size:0.7rem; color:#aaa;">(coming soon)</span></h3>
+    <p>Solving two-point boundary value problems for orbital transfer.</p>
+  </div>
+
+  <div class="topic-card" style="opacity:0.5; cursor:not-allowed;">
+    <div class="icon">🛸</div>
+    <h3>Orbit Determination <span style="font-size:0.7rem; color:#aaa;">(coming soon)</span></h3>
+    <p>Determining orbital elements from tracking measurements.</p>
+  </div>
+
+</div>
+```
+
+## About This Site
+
+These pages accompany a self-guided study of spacecraft navigation methods. Each tutorial combines:
+
+- **Mathematical derivations** with rendered LaTeX
+- **Interactive Plotly visualizations** you can manipulate in-browser
+- **Annotated Python code** you can copy and run locally
+
+All visualizations are self-contained — no server required.

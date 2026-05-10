@@ -1,0 +1,29 @@
+project:
+  type: website
+  output-dir: docs
+
+website:
+  title: "Spacecraft Navigation"
+  navbar:
+    left:
+      - href: index.qmd
+        text: Home
+      - href: least-squares.qmd
+        text: Least Squares
+    right:
+      - icon: github
+        href: https://github.com/your-username/spacecraft-nav
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    math: mathjax
+    code-fold: false
+    code-tools: true
+    fig-width: 9
+    fig-height: 6
+    html-math-method: mathjax

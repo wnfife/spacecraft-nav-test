@@ -1,0 +1,371 @@
+---
+title: "Least Squares Estimation"
+subtitle: "Fitting a line to noisy measurements — the foundation of navigation filters"
+author: "Spacecraft Navigation Tutorials"
+date: today
+format:
+  html:
+    code-fold: true
+    code-summary: "Show code"
+execute:
+  echo: true
+  warning: false
+---
+
+## Introduction
+
+Every navigation system — from a simple GPS receiver to a deep-space probe — must
+estimate state variables from imperfect measurements. **Least squares** is the
+bedrock technique: find the parameters that minimize the total squared error
+between your model and your data.
+
+We start with the simplest possible case: fitting a straight line to noisy
+range measurements. The math here scales directly to orbit determination.
+
+---
+
+## Problem Setup
+
+Suppose a spacecraft is moving at roughly constant velocity along a track.
+A radar station records range measurements $y_i$ at known times $t_i$, but each
+measurement is corrupted by noise $\epsilon_i$:
+
+$$
+y_i = a_0 + a_1 t_i + \epsilon_i, \qquad \epsilon_i \sim \mathcal{N}(0, \sigma^2)
+$$
+
+We want to estimate the coefficients $\mathbf{x} = [a_0,\; a_1]^\top$ — the
+initial range and range-rate — from $n$ measurements.
+
+---
+
+## The Normal Equations
+
+Stack all measurements into a system $\mathbf{H}\mathbf{x} = \mathbf{y}$:
+
+$$
+\underbrace{\begin{bmatrix} 1 & t_1 \\ 1 & t_2 \\ \vdots & \vdots \\ 1 & t_n \end{bmatrix}}_{\mathbf{H} \in \mathbb{R}^{n \times 2}}
+\underbrace{\begin{bmatrix} a_0 \\ a_1 \end{bmatrix}}_{\mathbf{x}}
+=
+\underbrace{\begin{bmatrix} y_1 \\ y_2 \\ \vdots \\ y_n \end{bmatrix}}_{\mathbf{y}}
+$$
+
+This system is **overdetermined** ($n \gg 2$), so no exact solution exists.
+Instead, we minimize the sum of squared residuals:
+
+$$
+J(\mathbf{x}) = \|\mathbf{y} - \mathbf{H}\mathbf{x}\|^2 = (\mathbf{y} - \mathbf{H}\mathbf{x})^\top (\mathbf{y} - \mathbf{H}\mathbf{x})
+$$
+
+Taking the derivative and setting it to zero:
+
+$$
+\frac{\partial J}{\partial \mathbf{x}} = -2\mathbf{H}^\top(\mathbf{y} - \mathbf{H}\mathbf{x}) = \mathbf{0}
+$$
+
+This yields the **normal equations**:
+
+$$
+\boxed{\hat{\mathbf{x}} = \left(\mathbf{H}^\top \mathbf{H}\right)^{-1} \mathbf{H}^\top \mathbf{y}}
+$$
+
+The matrix $\mathbf{H}^+ = (\mathbf{H}^\top \mathbf{H})^{-1} \mathbf{H}^\top$ is
+called the **Moore–Penrose pseudoinverse** of $\mathbf{H}$.
+
+---
+
+## Estimation Uncertainty
+
+The covariance of the estimate (how uncertain are we?) follows directly:
+
+$$
+\mathbf{P} = \sigma^2 \left(\mathbf{H}^\top \mathbf{H}\right)^{-1}
+$$
+
+The diagonal entries $P_{11}$ and $P_{22}$ are the variances of $\hat{a}_0$ and
+$\hat{a}_1$ respectively.  The $1\sigma$ uncertainty ellipse in parameter space
+is an invaluable diagnostic — we plot it below.
+
+---
+
+## Interactive Example
+
+The plot below simulates noisy range measurements and fits a line using the normal
+equations. Use the controls to:
+
+- Adjust the **noise level** $\sigma$
+- Change the **number of measurements** $n$
+- Toggle the **uncertainty bounds** ($\pm 2\sigma$ prediction interval)
+
+```{python}
+#| label: fig-least-squares
+#| fig-cap: "Interactive least squares fit. Use the dropdown to change noise level."
+
+import numpy as np
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+# ── True parameters ────────────────────────────────────────────────────────────
+a0_true = 500.0   # km  — initial range
+a1_true =  -2.3   # km/s — range-rate (closing)
+np.random.seed(42)
+
+# ── Build figure with dropdown scenarios ───────────────────────────────────────
+scenarios = [
+    {"label": "Low noise  (σ = 5 km,   n = 30)", "sigma": 5,   "n": 30},
+    {"label": "Med noise  (σ = 20 km,  n = 30)", "sigma": 20,  "n": 30},
+    {"label": "High noise (σ = 50 km,  n = 30)", "sigma": 50,  "n": 30},
+    {"label": "Med noise  (σ = 20 km,  n = 10)", "sigma": 20,  "n": 10},
+    {"label": "Med noise  (σ = 20 km,  n = 100)","sigma": 20,  "n": 100},
+]
+
+fig = make_subplots(
+    rows=1, cols=2,
+    subplot_titles=("Range Measurements & Fit", "Residuals"),
+    column_widths=[0.65, 0.35],
+    horizontal_spacing=0.10,
+)
+
+all_traces = []        # list of (row, col, trace) per scenario
+visibility_map = []    # how many traces per scenario
+
+t_dense = np.linspace(0, 200, 400)
+truth_y  = a0_true + a1_true * t_dense
+
+for s_idx, sc in enumerate(scenarios):
+    sigma = sc["sigma"]
+    n     = sc["n"]
+    t_meas = np.sort(np.random.uniform(0, 200, n))
+    noise  = np.random.normal(0, sigma, n)
+    y_meas = a0_true + a1_true * t_meas + noise
+
+    # ── Least squares ──────────────────────────────────────────────────────────
+    H = np.column_stack([np.ones(n), t_meas])
+    HtH_inv = np.linalg.inv(H.T @ H)
+    x_hat = HtH_inv @ H.T @ y_meas          # [a0_hat, a1_hat]
+    P     = sigma**2 * HtH_inv               # 2×2 covariance
+
+    y_fit   = x_hat[0] + x_hat[1] * t_dense
+    y_upper = y_fit + 2 * sigma
+    y_lower = y_fit - 2 * sigma
+    residuals = y_meas - (x_hat[0] + x_hat[1] * t_meas)
+
+    # ── Traces ─────────────────────────────────────────────────────────────────
+    visible = (s_idx == 0)
+
+    # 1. truth line
+    t1 = go.Scatter(
+        x=t_dense, y=truth_y, mode='lines',
+        name='Truth', line=dict(color='rgba(0,201,167,0.7)', dash='dot', width=2),
+        legendgroup=str(s_idx), visible=visible,
+    )
+    # 2. ±2σ band
+    t2 = go.Scatter(
+        x=np.concatenate([t_dense, t_dense[::-1]]),
+        y=np.concatenate([y_upper, y_lower[::-1]]),
+        fill='toself', fillcolor='rgba(13,110,253,0.10)',
+        line=dict(color='rgba(0,0,0,0)'),
+        name='±2σ band', legendgroup=str(s_idx), visible=visible,
+        showlegend=True,
+    )
+    # 3. measurements
+    t3 = go.Scatter(
+        x=t_meas, y=y_meas, mode='markers',
+        name=f'Measurements (n={n})',
+        marker=dict(color='#f59e0b', size=6, opacity=0.85,
+                    line=dict(color='#78350f', width=0.8)),
+        legendgroup=str(s_idx), visible=visible,
+    )
+    # 4. fit line
+    t4 = go.Scatter(
+        x=t_dense, y=y_fit, mode='lines',
+        name=f'LS fit  â₀={x_hat[0]:.1f}, â₁={x_hat[1]:.3f}',
+        line=dict(color='#0d6efd', width=2.5),
+        legendgroup=str(s_idx), visible=visible,
+    )
+    # 5. residuals bar
+    t5 = go.Bar(
+        x=t_meas, y=residuals,
+        name='Residuals', marker_color='rgba(245,158,11,0.6)',
+        marker_line=dict(color='#78350f', width=0.5),
+        legendgroup=str(s_idx), visible=visible,
+        showlegend=True,
+    )
+    # 6. zero line for residuals
+    t6 = go.Scatter(
+        x=[0, 200], y=[0, 0], mode='lines',
+        line=dict(color='rgba(0,0,0,0.25)', dash='dash', width=1),
+        showlegend=False, legendgroup=str(s_idx), visible=visible,
+    )
+
+    for row, col, tr in [(1,1,t1),(1,1,t2),(1,1,t3),(1,1,t4),(1,2,t5),(1,2,t6)]:
+        fig.add_trace(tr, row=row, col=col)
+
+    visibility_map.append(6)  # 6 traces per scenario
+
+# ── Dropdown buttons ───────────────────────────────────────────────────────────
+buttons = []
+for s_idx, sc in enumerate(scenarios):
+    vis = []
+    for j, count in enumerate(visibility_map):
+        vis.extend([j == s_idx] * count)
+    buttons.append(dict(
+        label=sc["label"],
+        method='update',
+        args=[{'visible': vis}],
+    ))
+
+fig.update_layout(
+    height=480,
+    updatemenus=[dict(
+        buttons=buttons,
+        direction='down',
+        x=0.01, y=1.18,
+        xanchor='left', yanchor='top',
+        bgcolor='#1a202c',
+        bordercolor='#374151',
+        font=dict(color='#e2e8f0', family='Space Mono', size=11),
+        showactive=True,
+        active=0,
+    )],
+    legend=dict(
+        x=0.01, y=0.99, bgcolor='rgba(255,255,255,0.85)',
+        bordercolor='#e2e8f0', borderwidth=1,
+        font=dict(family='Space Mono', size=10),
+    ),
+    plot_bgcolor='#fafafa',
+    paper_bgcolor='white',
+    font=dict(family='Inter', size=12),
+    margin=dict(t=80, b=40, l=50, r=20),
+    annotations=[
+        dict(text="Select scenario:", x=0.01, y=1.24, xref='paper',
+             yref='paper', showarrow=False,
+             font=dict(family='Space Mono', size=11, color='#374151')),
+    ],
+)
+
+fig.update_xaxes(title_text="Time (s)", gridcolor='#e5e7eb', row=1, col=1)
+fig.update_yaxes(title_text="Range (km)", gridcolor='#e5e7eb', row=1, col=1)
+fig.update_xaxes(title_text="Time (s)", gridcolor='#e5e7eb', row=1, col=2)
+fig.update_yaxes(title_text="Residual (km)", gridcolor='#e5e7eb',
+                 zeroline=True, zerolinecolor='#374151', row=1, col=2)
+
+fig.show()
+```
+
+---
+
+## Interpreting the Results
+
+After computing $\hat{\mathbf{x}}$, always check:
+
+| Diagnostic | What to look for |
+|---|---|
+| **Residual plot** | Residuals should be random (zero mean, no pattern) |
+| **$\hat{a}_0, \hat{a}_1$ vs truth** | Should be close; gap shrinks as $n\uparrow$ or $\sigma\downarrow$ |
+| **$\mathbf{P}$ diagonal** | Smaller entries = more confident estimate |
+| **Condition number of $\mathbf{H}^\top\mathbf{H}$** | Large values warn of numerical problems |
+
+### What happens as you vary parameters?
+
+- **More measurements ($n\uparrow$)** — The $\pm 2\sigma$ band narrows; $\mathbf{P}$ shrinks as $1/n$
+- **Higher noise ($\sigma\uparrow$)** — Wider band, larger $\mathbf{P}$, but the *estimator is still unbiased*
+- **Fewer measurements ($n\downarrow$)** — Fit becomes sensitive to individual outliers
+
+---
+
+## The Covariance Ellipse
+
+The 2×2 covariance $\mathbf{P}$ describes our joint uncertainty in
+$(a_0, a_1)$.  Its eigenvectors give the principal axes of the uncertainty
+ellipse in parameter space.
+
+```{python}
+#| label: fig-cov-ellipse
+#| fig-cap: "1σ uncertainty ellipse in parameter space for three noise levels."
+
+import numpy as np
+import plotly.graph_objects as go
+
+def ellipse_points(P, center, n_pts=200, scale=1.0):
+    """Return (x,y) points on the scale·σ ellipse defined by covariance P."""
+    vals, vecs = np.linalg.eigh(P)
+    theta = np.linspace(0, 2*np.pi, n_pts)
+    circle = np.array([np.cos(theta), np.sin(theta)])
+    ellipse = vecs @ np.diag(scale * np.sqrt(vals)) @ circle
+    return center[0] + ellipse[0], center[1] + ellipse[1]
+
+np.random.seed(42)
+n = 30
+t_meas = np.sort(np.random.uniform(0, 200, n))
+H = np.column_stack([np.ones(n), t_meas])
+HtH_inv = np.linalg.inv(H.T @ H)
+
+sigmas  = [5, 20, 50]
+colors  = ['#00c9a7', '#0d6efd', '#ef4444']
+fig2 = go.Figure()
+
+for sigma, color in zip(sigmas, colors):
+    P = sigma**2 * HtH_inv
+    # Monte Carlo cloud for reference
+    noise_draws = np.random.normal(0, sigma, (500, n))
+    x_draws = np.array([HtH_inv @ H.T @ (a0_true + a1_true*t_meas + e)
+                        for e in noise_draws])
+    fig2.add_trace(go.Scatter(
+        x=x_draws[:,0], y=x_draws[:,1], mode='markers',
+        marker=dict(color=color, size=3, opacity=0.25),
+        showlegend=False,
+    ))
+    ex, ey = ellipse_points(P, [a0_true, a1_true], scale=1.0)
+    fig2.add_trace(go.Scatter(
+        x=ex, y=ey, mode='lines',
+        name=f'1σ ellipse (σ={sigma} km)',
+        line=dict(color=color, width=2.5),
+    ))
+
+fig2.add_trace(go.Scatter(
+    x=[a0_true], y=[a1_true], mode='markers',
+    name='True parameters',
+    marker=dict(symbol='x', size=14, color='#111827',
+                line=dict(color='#111827', width=2.5)),
+))
+
+fig2.update_layout(
+    height=420,
+    xaxis_title="â₀  (initial range, km)",
+    yaxis_title="â₁  (range-rate, km/s)",
+    plot_bgcolor='#fafafa',
+    paper_bgcolor='white',
+    font=dict(family='Inter', size=12),
+    legend=dict(font=dict(family='Space Mono', size=10)),
+    margin=dict(t=30, b=50, l=60, r=20),
+)
+fig2.update_xaxes(gridcolor='#e5e7eb')
+fig2.update_yaxes(gridcolor='#e5e7eb')
+fig2.show()
+```
+
+Larger noise → larger ellipse. The *orientation* of the ellipse is determined
+by the geometry of $\mathbf{H}$ (measurement times), not by $\sigma$.
+
+---
+
+## Key Takeaways
+
+::: {.callout-tip}
+### Summary
+1. The **normal equations** $\hat{\mathbf{x}} = (\mathbf{H}^\top\mathbf{H})^{-1}\mathbf{H}^\top\mathbf{y}$ give the minimum-variance unbiased linear estimate under Gaussian noise.
+2. The **covariance** $\mathbf{P} = \sigma^2(\mathbf{H}^\top\mathbf{H})^{-1}$ quantifies estimation uncertainty — always compute and examine it.
+3. Adding measurements (larger $n$) *always* reduces uncertainty; higher noise (larger $\sigma$) inflates it proportionally.
+4. Always inspect residuals — structured residuals signal model mismatch, not just noise.
+:::
+
+---
+
+## What's Next
+
+This scalar linear case is the foundation for:
+
+- **Weighted least squares** — when measurement noise is non-uniform ($\mathbf{P} = (\mathbf{H}^\top \mathbf{W} \mathbf{H})^{-1} \mathbf{H}^\top \mathbf{W} \mathbf{y}$)
+- **Batch orbit determination** — $\mathbf{H}$ becomes the range/angle partial-derivative matrix w.r.t. orbital elements
+- **The Kalman filter** — recursive least squares for time-varying systems

@@ -1,0 +1,18 @@
+# Quarto build artifacts
+/.quarto/
+*_files/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Keep docs/ committed (GitHub Pages source)
+# docs/
+
+**/*.quarto_ipynb

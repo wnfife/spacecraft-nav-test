@@ -1,0 +1,151 @@
+/* ============================================================
+   Spacecraft Navigation — Custom Styles
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap');
+
+:root {
+  --primary: #0d6efd;
+  --accent:  #00c9a7;
+  --dark:    #0b0f1a;
+  --surface: #111827;
+  --muted:   #6b7280;
+  --border:  rgba(255,255,255,0.08);
+}
+
+/* ── Body ─────────────────────────────────────────────────── */
+body {
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  background: #f8f9fc;
+  color: #1a202c;
+}
+
+/* ── Navbar ───────────────────────────────────────────────── */
+.navbar {
+  background: var(--dark) !important;
+  border-bottom: 1px solid var(--border);
+  font-family: 'Space Mono', monospace;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+}
+.navbar-brand, .navbar .nav-link {
+  color: #e2e8f0 !important;
+}
+.navbar .nav-link:hover {
+  color: var(--accent) !important;
+}
+
+/* ── Headings ─────────────────────────────────────────────── */
+h1, h2, h3, h4 {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+h1 { font-size: 2.4rem; color: var(--dark); }
+h2 { font-size: 1.6rem; color: #1a202c; border-bottom: 2px solid var(--accent); padding-bottom: 0.3rem; margin-top: 2.5rem; }
+h3 { font-size: 1.2rem; color: #2d3748; }
+
+/* ── Hero banner on home page ─────────────────────────────── */
+.hero {
+  background: linear-gradient(135deg, var(--dark) 0%, #1a2340 60%, #0d3b6e 100%);
+  color: #e2e8f0;
+  padding: 4rem 2rem 3rem;
+  border-radius: 12px;
+  margin-bottom: 2.5rem;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events: none;
+}
+.hero h1 { color: #fff; font-size: 2.8rem; margin-bottom: 0.75rem; }
+.hero p  { color: #94a3b8; font-size: 1.1rem; max-width: 560px; }
+.hero .badge-mono {
+  display: inline-block;
+  background: rgba(0,201,167,0.15);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.72rem;
+  padding: 0.2rem 0.55rem;
+  letter-spacing: 0.08em;
+  margin-bottom: 1rem;
+}
+
+/* ── Cards on home page ───────────────────────────────────── */
+.topic-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.5rem;
+  background: #fff;
+  transition: box-shadow 0.2s, transform 0.2s;
+  text-decoration: none !important;
+  display: block;
+  color: inherit !important;
+}
+.topic-card:hover {
+  box-shadow: 0 8px 32px rgba(13,110,253,0.12);
+  transform: translateY(-3px);
+  border-color: var(--primary);
+}
+.topic-card .icon {
+  font-size: 1.8rem;
+  margin-bottom: 0.6rem;
+}
+.topic-card h3 {
+  font-size: 1.05rem;
+  margin: 0 0 0.4rem;
+  color: var(--dark);
+}
+.topic-card p {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin: 0;
+}
+
+/* ── Callout / Info boxes ─────────────────────────────────── */
+.callout {
+  border-radius: 8px;
+  border-left-width: 4px;
+}
+
+/* ── Code blocks ──────────────────────────────────────────── */
+pre {
+  border-radius: 8px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.82rem;
+}
+
+/* ── Math ─────────────────────────────────────────────────── */
+.MathJax { font-size: 1.05em !important; }
+
+/* ── Tables ───────────────────────────────────────────────── */
+table {
+  font-size: 0.9rem;
+  border-collapse: collapse;
+  width: 100%;
+}
+th {
+  background: var(--dark);
+  color: #e2e8f0;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  padding: 0.6rem 1rem;
+}
+td { padding: 0.5rem 1rem; border-bottom: 1px solid #e2e8f0; }
+tr:nth-child(even) td { background: #f8f9fc; }
+
+/* ── TOC sidebar ──────────────────────────────────────────── */
+#TOC {
+  font-size: 0.85rem;
+  font-family: 'Space Mono', monospace;
+}
+#TOC a { color: var(--muted); }
+#TOC a:hover, #TOC a.active { color: var(--primary); }
